@@ -20,9 +20,8 @@ func (c *ClientSimple) AssetDeleteMultiple(assetUUIDs []uuid.UUID, force bool) e
 		return fmt.Errorf("failed to delete assets: %w", err)
 	}
 
-	// Check if the response indicates success
 	if resp.HTTPResponse.StatusCode >= 400 {
-		return fmt.Errorf("bulk delete request failed with status %d: %s", resp.HTTPResponse.StatusCode, resp.HTTPResponse.Status)
+		return fmt.Errorf("bulk delete request failed with status %d: %s", resp.HTTPResponse.StatusCode, string(resp.Body))
 	}
 
 	return nil

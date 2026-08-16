@@ -59,11 +59,22 @@ func (c *ClientSimple) AssetUploadCopy(asset AssetResponseDto, file *os.File) (*
 	if err != nil {
 		return nil, fmt.Errorf("upload failed: %w", err)
 	}
-	if rUp.JSON201 == nil {
+	var uploadedID string
+	switch {
+	case rUp.JSON201 != nil:
+		uploadedID = rUp.JSON201.Id
+	case rUp.StatusCode() == 200:
+		// Immich returns 200 for duplicates with the same response shape
+		var dupResp AssetMediaResponseDto
+		if err := json.Unmarshal(rUp.Body, &dupResp); err != nil {
+			return nil, fmt.Errorf("upload returned duplicate but failed to parse response: %w", err)
+		}
+		uploadedID = dupResp.Id
+	default:
 		return nil, fmt.Errorf("upload failed: status %d, body: %s", rUp.StatusCode(), string(rUp.Body))
 	}
 
-	uuidNew, err := uuid.Parse(rUp.JSON201.Id)
+	uuidNew, err := uuid.Parse(uploadedID)
 	if err != nil {
 		return nil, err
 	}

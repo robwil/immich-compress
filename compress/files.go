@@ -60,7 +60,13 @@ func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich
 		if err != nil {
 			return err
 		}
-		client.AssetDelete(*uuidNew, false)
+		origUUID, err := immich.UUUIDOfString(asset.Id)
+		if err != nil {
+			return err
+		}
+		if err := client.AssetDelete(origUUID, false); err != nil {
+			return fmt.Errorf("failed to delete original asset: %w", err)
+		}
 		skipped = false
 	}
 
