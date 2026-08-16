@@ -38,26 +38,31 @@ func (c *ClientSimple) tagCompressedAt() (types.UUID, error) {
 
 func (c *ClientSimple) tagFindCreate(name string, parent *types.UUID) (types.UUID, *TagResponseDto, error) {
 	var uuid types.UUID
-	tagExists := false
 	var tagFound *TagResponseDto
 	r, err := c.client.GetAllTagsWithResponse(c.ctx)
 	if err != nil {
 		return uuid, tagFound, err
 	}
+	if r.JSON200 == nil {
+		return uuid, tagFound, fmt.Errorf("failed to get tags: status %d, body: %s", r.StatusCode(), string(r.Body))
+	}
 	for _, tagDto := range *r.JSON200 {
 		if name == tagDto.Name {
-			tagExists = true
 			tagFound = &tagDto
+			break
 		}
 	}
 
-	if !tagExists {
+	if tagFound == nil {
 		rc, err := c.client.CreateTagWithResponse(c.ctx, CreateTagJSONRequestBody{
 			Name:     name,
 			ParentId: parent,
 		})
 		if err != nil {
 			return uuid, tagFound, err
+		}
+		if rc.JSON201 == nil {
+			return uuid, tagFound, fmt.Errorf("failed to create tag %q: status %d, body: %s", name, rc.StatusCode(), string(rc.Body))
 		}
 		tagFound = rc.JSON201
 	}

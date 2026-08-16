@@ -7,6 +7,29 @@ import (
 	"github.com/oapi-codegen/runtime/types"
 )
 
+func TestNormalizeBaseURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"bare URL", "http://localhost:2283", "http://localhost:2283/api"},
+		{"trailing slash", "http://localhost:2283/", "http://localhost:2283/api"},
+		{"multiple trailing slashes", "http://localhost:2283///", "http://localhost:2283/api"},
+		{"already has /api", "http://localhost:2283/api", "http://localhost:2283/api"},
+		{"already has /api with trailing slash", "http://localhost:2283/api/", "http://localhost:2283/api"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := normalizeBaseURL(tt.input)
+			if got != tt.expected {
+				t.Errorf("normalizeBaseURL(%q) = %q, want %q", tt.input, got, tt.expected)
+			}
+		})
+	}
+}
+
 func TestUUUIDOfString(t *testing.T) {
 	tests := []struct {
 		name     string

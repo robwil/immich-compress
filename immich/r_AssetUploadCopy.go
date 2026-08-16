@@ -45,7 +45,7 @@ func (c *ClientSimple) AssetUploadCopy(asset AssetResponseDto, file *os.File) (*
 		IsFavorite:       asset.IsFavorite,
 		Metadata:         metadata,
 		Visibility:       string(asset.Visibility),
-		LivePhotoVideoID: *asset.LivePhotoVideoId,
+		LivePhotoVideoID: derefString(asset.LivePhotoVideoId),
 	}
 
 	// 3. Create the multipart body and content type
@@ -58,6 +58,9 @@ func (c *ClientSimple) AssetUploadCopy(asset AssetResponseDto, file *os.File) (*
 	rUp, err := c.client.UploadAssetWithBodyWithResponse(c.ctx, &UploadAssetParams{}, contentType, body)
 	if err != nil {
 		return nil, fmt.Errorf("upload failed: %w", err)
+	}
+	if rUp.JSON201 == nil {
+		return nil, fmt.Errorf("upload failed: status %d, body: %s", rUp.StatusCode(), string(rUp.Body))
 	}
 
 	uuidNew, err := uuid.Parse(rUp.JSON201.Id)

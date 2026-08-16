@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/oapi-codegen/runtime/types"
@@ -20,7 +21,17 @@ type ClientSimple struct {
 	}
 }
 
+func normalizeBaseURL(baseURL string) string {
+	baseURL = strings.TrimRight(baseURL, "/")
+	if !strings.HasSuffix(baseURL, "/api") {
+		baseURL += "/api"
+	}
+	return baseURL
+}
+
 func NewClientSimple(ctx context.Context, parralel int, baseURL string, apiKey string) (*ClientSimple, error) {
+	baseURL = normalizeBaseURL(baseURL)
+
 	// Create a new client.
 	// You must provide an http.Client that adds the API key to every request.
 	client, err := NewClientWithResponses(baseURL, WithRequestEditorFn(
@@ -42,6 +53,13 @@ func NewClientSimple(ctx context.Context, parralel int, baseURL string, apiKey s
 	clientSimple.tags = struct{ compressedID types.UUID }{compressedID: tagCompressedAtID}
 
 	return clientSimple, nil
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func UUUIDOfString(id string) (types.UUID, error) {
