@@ -48,6 +48,7 @@ var compressCmd = &cobra.Command{
 	Use:   "compress",
 	Short: "Compress existing fotos/videos",
 	Long:  `A longer description TODO`,
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config := compress.Config{
 			Parallel:       flagsRoot.flagParallel,

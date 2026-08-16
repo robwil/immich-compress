@@ -32,11 +32,16 @@ func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 	defer os.Remove(file.Name())
 
 	fileInfo, err := file.Stat()
 	if err != nil {
 		return fmt.Errorf("error getting file stats: %w", err)
+	}
+
+	if _, err := file.Seek(0, 0); err != nil {
+		return fmt.Errorf("error seeking file: %w", err)
 	}
 
 	// 3. Get the size from the FileInfo

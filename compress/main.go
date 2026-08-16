@@ -84,7 +84,7 @@ func Compressing(ctx context.Context, config Config) error {
 				}
 			}
 
-			if !asset.Asset.CompressedAfter(config.After) {
+			if asset.Asset.CompressedAfter(config.After) {
 				return nil
 			}
 			// Process the asset here

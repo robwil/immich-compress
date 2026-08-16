@@ -97,17 +97,22 @@ func (c *ImageConfig) compress(ctx context.Context, client *immich.ClientSimple,
 	}
 
 	// Create temporary output file
-	fileOut, err := os.Create(filepath.Join(os.TempDir(), fmt.Sprintf("%s-compressed.%s", uuid.String(), c.Format)))
+	outPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-compressed.%s", uuid.String(), c.Format))
+	fileOut, err := os.Create(outPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp output file: %w", err)
 	}
-	defer fileOut.Close()
 
 	_, err = fileOut.Write(imageBytes)
 	if err != nil {
+		fileOut.Close()
 		return nil, fmt.Errorf("failed to save image to temp file: %w", err)
 	}
-	fileOut.Close() // Close to ensure all data is written
+
+	if err := fileOut.Sync(); err != nil {
+		fileOut.Close()
+		return nil, fmt.Errorf("failed to flush image to temp file: %w", err)
+	}
 
 	return fileOut, nil
 }

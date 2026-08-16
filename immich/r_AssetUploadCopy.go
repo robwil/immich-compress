@@ -146,7 +146,9 @@ func assetUploadMultipartBody(params *uploadAssetBody, assetFile *os.File) (io.R
 	_ = writer.WriteField("deviceId", params.DeviceID)
 	_ = writer.WriteField("duration", params.Duration)
 	_ = writer.WriteField("filename", params.Filename)
-	_ = writer.WriteField("livePhotoVideoId", params.LivePhotoVideoID)
+	if params.LivePhotoVideoID != "" {
+		_ = writer.WriteField("livePhotoVideoId", params.LivePhotoVideoID)
+	}
 	_ = writer.WriteField("visibility", params.Visibility)
 
 	// Boolean field
@@ -157,8 +159,11 @@ func assetUploadMultipartBody(params *uploadAssetBody, assetFile *os.File) (io.R
 	_ = writer.WriteField("fileModifiedAt", params.FileModifiedAt.Format(time.RFC3339))
 
 	// --- 3. Add the 'metadata' (JSON array) ---
-	// Marshal the metadata struct to a JSON string
-	metaJSON, err := json.Marshal(params.Metadata)
+	meta := params.Metadata
+	if meta == nil {
+		meta = []AssetMetadataUpsertItemDto{}
+	}
+	metaJSON, err := json.Marshal(meta)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to marshal metadata: %w", err)
 	}
