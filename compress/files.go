@@ -55,11 +55,15 @@ func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich
 
 	var uuidNew *types.UUID
 	if sizeOrig-sizeNew > int64(float64(sizeOrig)*(float64(diffPercent)/100)) {
-		uuidNew, err = uploadFile(client, asset, file)
+		ownerClient, err := client.ClientForOwner(asset.OwnerId)
 		if err != nil {
 			return err
 		}
-		err = client.TagCompressedAdd(*uuidNew)
+		uuidNew, err = uploadFile(ownerClient, asset, file)
+		if err != nil {
+			return err
+		}
+		err = ownerClient.TagCompressedAdd(*uuidNew)
 		if err != nil {
 			return err
 		}
@@ -67,7 +71,7 @@ func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich
 		if err != nil {
 			return err
 		}
-		if err := client.AssetDeleteAsOwner(origUUID, asset.OwnerId, false); err != nil {
+		if err := ownerClient.AssetDelete(origUUID, false); err != nil {
 			return fmt.Errorf("failed to delete original asset: %w", err)
 		}
 		skipped = false
@@ -81,7 +85,7 @@ func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich
 		fmt.Printf("✗ Skipped: %s (Original: %.2f MB, Converted: %.2f MB, No size reduction)\n", asset.OriginalFileName, sizeOrigMB, sizeNewMB)
 		return nil
 	}
-	fmt.Printf("✓ Replaced: %s (Original: %.2f MB, Converted: %.2f MB, Saved: %.2f MB)\n", asset.OriginalFileName, sizeOrigMB, sizeNewMB, sizeSavedMB)
+	fmt.Printf("✓ Replaced: %s -> %s (Original: %.2f MB, Converted: %.2f MB, Saved: %.2f MB)\n", asset.OriginalFileName, uuidNew, sizeOrigMB, sizeNewMB, sizeSavedMB)
 
 	return nil
 }

@@ -59,6 +59,28 @@ func NewClientSimple(ctx context.Context, parralel int, baseURL string, apiKey s
 	return clientSimple, nil
 }
 
+func (c *ClientSimple) ClientForOwner(ownerID string) (*ClientSimple, error) {
+	apiKey, ok := c.userKeys.GetAPIKey(ownerID)
+	if !ok {
+		return c, nil
+	}
+
+	ownerClient, err := newClientForAPIKey(c.baseURL, apiKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client for owner %s: %w", ownerID, err)
+	}
+
+	return &ClientSimple{
+		client:    ownerClient,
+		clientRaw: ownerClient.ClientInterface,
+		ctx:       c.ctx,
+		parallel:  c.parallel,
+		baseURL:   c.baseURL,
+		userKeys:  c.userKeys,
+		tags:      c.tags,
+	}, nil
+}
+
 func derefString(s *string) string {
 	if s == nil {
 		return ""
