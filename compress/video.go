@@ -142,6 +142,7 @@ func (c *VideoConfig) compress(ctx context.Context, client *immich.ClientSimple,
 	// Create temporary output file
 	fileOut, err := os.Open(fileOutPath)
 	if err != nil {
+		os.Remove(fileOutPath)
 		return nil, fmt.Errorf("failed to open temp output file: %w", err)
 	}
 

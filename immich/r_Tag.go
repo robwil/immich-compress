@@ -12,15 +12,18 @@ const (
 )
 
 func (c *ClientSimple) TagCompressedAdd(assetID types.UUID) error {
-	_, err := c.client.BulkTagAssetsWithResponse(c.ctx, TagBulkAssetsDto{
+	resp, err := c.client.BulkTagAssetsWithResponse(c.ctx, TagBulkAssetsDto{
 		AssetIds: []types.UUID{assetID},
 		TagIds:   []types.UUID{c.tags.compressedID},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to attach tags: %w", err)
 	}
+	if resp.HTTPResponse.StatusCode >= 400 {
+		return fmt.Errorf("failed to attach tags: status %d, body: %s", resp.HTTPResponse.StatusCode, string(resp.Body))
+	}
 
-	return err
+	return nil
 }
 
 func (c *ClientSimple) tagCompressedAt() (types.UUID, error) {

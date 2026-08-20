@@ -80,7 +80,7 @@ func (c *ClientSimple) AssetUploadCopy(asset AssetResponseDto, file *os.File) (*
 	}
 	t := true
 	// copy asset with API
-	_, err = c.client.CopyAssetWithResponse(c.ctx, CopyAssetJSONRequestBody{
+	rCopy, err := c.client.CopyAssetWithResponse(c.ctx, CopyAssetJSONRequestBody{
 		Albums:      &t,
 		Favorite:    &t,
 		SharedLinks: &t,
@@ -90,7 +90,10 @@ func (c *ClientSimple) AssetUploadCopy(asset AssetResponseDto, file *os.File) (*
 		TargetId:    uuidNew,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("upload failed: %w", err)
+		return nil, fmt.Errorf("failed to copy asset metadata: %w", err)
+	}
+	if rCopy.HTTPResponse.StatusCode >= 400 {
+		return nil, fmt.Errorf("failed to copy asset metadata: status %d, body: %s", rCopy.HTTPResponse.StatusCode, string(rCopy.Body))
 	}
 	// Copy tags from old asset to new one
 	if asset.Tags != nil && len(*asset.Tags) > 0 {
@@ -103,12 +106,15 @@ func (c *ClientSimple) AssetUploadCopy(asset AssetResponseDto, file *os.File) (*
 			tagIds = append(tagIds, tagUUID)
 		}
 
-		_, err = c.client.BulkTagAssetsWithResponse(c.ctx, TagBulkAssetsDto{
+		rTag, err := c.client.BulkTagAssetsWithResponse(c.ctx, TagBulkAssetsDto{
 			AssetIds: []openapi_types.UUID{uuidNew},
 			TagIds:   tagIds,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to copy tags: %w", err)
+		}
+		if rTag.HTTPResponse.StatusCode >= 400 {
+			return nil, fmt.Errorf("failed to copy tags: status %d, body: %s", rTag.HTTPResponse.StatusCode, string(rTag.Body))
 		}
 	}
 

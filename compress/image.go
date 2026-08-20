@@ -106,11 +106,13 @@ func (c *ImageConfig) compress(ctx context.Context, client *immich.ClientSimple,
 	_, err = fileOut.Write(imageBytes)
 	if err != nil {
 		fileOut.Close()
+		os.Remove(outPath)
 		return nil, fmt.Errorf("failed to save image to temp file: %w", err)
 	}
 
 	if err := fileOut.Sync(); err != nil {
 		fileOut.Close()
+		os.Remove(outPath)
 		return nil, fmt.Errorf("failed to flush image to temp file: %w", err)
 	}
 

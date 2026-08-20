@@ -16,6 +16,9 @@ type compress interface {
 
 func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich.AssetResponseDto, diffPercent int, imageConfig ImageConfig, videoConfig VideoConfig) error {
 	skipped := true
+	if asset.ExifInfo == nil || asset.ExifInfo.FileSizeInByte == nil {
+		return fmt.Errorf("asset %s is missing file size info", asset.Id)
+	}
 	sizeOrig := *asset.ExifInfo.FileSizeInByte
 	var sizeNew int64
 	var compress compress
@@ -64,7 +67,7 @@ func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich
 		if err != nil {
 			return err
 		}
-		if err := client.AssetDelete(origUUID, false); err != nil {
+		if err := client.AssetDeleteAsOwner(origUUID, asset.OwnerId, false); err != nil {
 			return fmt.Errorf("failed to delete original asset: %w", err)
 		}
 		skipped = false

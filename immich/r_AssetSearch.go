@@ -96,6 +96,9 @@ func (c *ClientSimple) getAssets(search SearchAssetsJSONRequestBody) (*SearchAss
 	if r.StatusCode() != http.StatusOK {
 		return nil, 0, fmt.Errorf("bad status code: %s, body: %s", r.Status(), string(r.Body))
 	}
+	if r.JSON200 == nil {
+		return nil, 0, fmt.Errorf("search returned status 200 but no JSON body")
+	}
 	var nextPage32 float32
 	if r.JSON200.Assets.NextPage != nil {
 		nextPage64, _ := strconv.ParseFloat(*r.JSON200.Assets.NextPage, 32)
