@@ -4,15 +4,48 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"immich-compress/immich"
 
 	"github.com/google/uuid"
 )
+
+const maxDurationDriftSeconds = 2.0
+
+func probeDuration(ctx context.Context, path string) (float64, error) {
+	out, err := exec.CommandContext(ctx, "ffprobe",
+		"-v", "error",
+		"-show_entries", "format=duration",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		path,
+	).Output()
+	if err != nil {
+		return 0, fmt.Errorf("ffprobe failed for %s: %w", path, err)
+	}
+	return strconv.ParseFloat(strings.TrimSpace(string(out)), 64)
+}
+
+func validateVideoDuration(ctx context.Context, inputPath, outputPath string) error {
+	srcDur, err := probeDuration(ctx, inputPath)
+	if err != nil {
+		return fmt.Errorf("failed to probe source: %w", err)
+	}
+	dstDur, err := probeDuration(ctx, outputPath)
+	if err != nil {
+		return fmt.Errorf("failed to probe output: %w", err)
+	}
+	drift := math.Abs(srcDur - dstDur)
+	if drift > maxDurationDriftSeconds {
+		return fmt.Errorf("video duration mismatch: source=%.2fs output=%.2fs drift=%.2fs", srcDur, dstDur, drift)
+	}
+	return nil
+}
 
 type VideoConfig struct {
 	Container VideoContainer
@@ -139,7 +172,12 @@ func (c *VideoConfig) compress(ctx context.Context, client *immich.ClientSimple,
 		return nil, fmt.Errorf("ffmpeg failed with output '%s' %w", string(output), err)
 	}
 
-	// Create temporary output file
+	// Validate output duration matches input
+	if err := validateVideoDuration(ctx, fileIn.Name(), fileOutPath); err != nil {
+		os.Remove(fileOutPath)
+		return nil, err
+	}
+
 	fileOut, err := os.Open(fileOutPath)
 	if err != nil {
 		os.Remove(fileOutPath)

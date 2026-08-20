@@ -36,6 +36,7 @@ type Config struct {
 	VideoContainer VideoContainer
 	VideoFormat    VideoFormat
 	VideoQuality   int
+	VideoParallel  int
 }
 
 func Compressing(ctx context.Context, config Config) error {
@@ -45,6 +46,8 @@ func Compressing(ctx context.Context, config Config) error {
 	if err != nil {
 		return err
 	}
+
+	videoSem := make(chan struct{}, config.VideoParallel)
 
 	compressedIDs, err := client.CompressedAssetIDsAllUsers()
 	if err != nil {
@@ -119,7 +122,7 @@ func Compressing(ctx context.Context, config Config) error {
 
 			// Process the asset here
 			fmt.Printf("Processing file: %#v\n", asset.Asset.Id)
-			err := compressFile(gCtx, client, asset.Asset, config.DiffPercent, ImageConfig{
+			err := compressFile(gCtx, client, asset.Asset, config.DiffPercent, videoSem, ImageConfig{
 				Format:  config.ImageFormat,
 				Quality: config.ImageQuality,
 				Effort:  config.ImageEffort,

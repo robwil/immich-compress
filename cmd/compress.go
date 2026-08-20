@@ -32,6 +32,7 @@ var flagsCompress struct {
 	flagImageQuality   int
 	flagImageEffort    int
 	flagImageFormat    string
+	flagVideoParallel  int
 	flagVideoQuality   int
 	flagVideoFormat    string
 	flagVideoContainer string
@@ -119,6 +120,7 @@ since Immich restricts asset operations to the asset owner.`,
 			VideoContainer: (compress.VideoContainer)(strings.ToLower(strings.TrimSpace(flagsCompress.flagVideoContainer))),
 			VideoFormat:    (compress.VideoFormat)(strings.ToLower(strings.TrimSpace(flagsCompress.flagVideoFormat))),
 			VideoQuality:   flagsCompress.flagVideoQuality,
+			VideoParallel:  flagsCompress.flagVideoParallel,
 		}
 		return compress.Compressing(cmd.Context(), config)
 	},
@@ -145,6 +147,7 @@ func init() {
 	compressCmd.PersistentFlags().IntVarP(&flagsCompress.flagImageQuality, "image-quality", "q", 80, "Image quality for compression (1-100)")
 	compressCmd.PersistentFlags().IntVarP(&flagsCompress.flagImageEffort, "image-effort", "e", 7, "Image compression effort (1-9, higher = slower but smaller)")
 	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagImageFormat, "image-format", "f", string(compress.JXL), fmt.Sprintf("Image format for compression (%v)", strings.Join(formatSlice(compress.ImageFormatsAvailable), ", ")))
+	compressCmd.PersistentFlags().IntVar(&flagsCompress.flagVideoParallel, "video-parallel", 1, "Max concurrent video encodes (default 1, since ffmpeg is already multi-threaded)")
 	compressCmd.PersistentFlags().IntVarP(&flagsCompress.flagVideoQuality, "video-quality", "Q", 25, "Video quality for compression (1-100). Lower is higher quality")
 	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagVideoFormat, "video-format", "F", string(compress.AV1), fmt.Sprintf("Video format for compression (%v)", strings.Join(formatSlice(compress.VideoFormatsAvailable), ", ")))
 	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagVideoContainer, "video-container", "C", string(compress.MKV), fmt.Sprintf("Video container format (%v)", strings.Join(formatSlice(compress.VideoContainersAvailable), ", ")))

@@ -14,7 +14,7 @@ type compress interface {
 	compress(ctx context.Context, client *immich.ClientSimple, asset immich.AssetResponseDto) (*os.File, error)
 }
 
-func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich.AssetResponseDto, diffPercent int, imageConfig ImageConfig, videoConfig VideoConfig) error {
+func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich.AssetResponseDto, diffPercent int, videoSem chan struct{}, imageConfig ImageConfig, videoConfig VideoConfig) error {
 	skipped := true
 	if asset.ExifInfo == nil || asset.ExifInfo.FileSizeInByte == nil {
 		return fmt.Errorf("asset %s is missing file size info", asset.Id)
@@ -26,6 +26,9 @@ func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich
 	case "IMAGE":
 		compress = &imageConfig
 	case "VIDEO":
+		// Limit concurrent video encodes
+		videoSem <- struct{}{}
+		defer func() { <-videoSem }()
 		compress = &videoConfig
 	default:
 		return fmt.Errorf("we do not support type: %s", asset.Type)
