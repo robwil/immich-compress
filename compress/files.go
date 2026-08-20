@@ -82,6 +82,18 @@ func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich
 	sizeSavedMB := bytesToMB(sizeOrig - sizeNew)
 
 	if skipped {
+		// Tag as compressed so we don't retry next run
+		origUUID, err := immich.UUUIDOfString(asset.Id)
+		if err != nil {
+			return err
+		}
+		ownerClient, err := client.ClientForOwner(asset.OwnerId)
+		if err != nil {
+			return err
+		}
+		if err := ownerClient.TagCompressedAdd(origUUID); err != nil {
+			return fmt.Errorf("failed to tag skipped asset: %w", err)
+		}
 		fmt.Printf("✗ Skipped: %s (Original: %.2f MB, Converted: %.2f MB, No size reduction)\n", asset.OriginalFileName, sizeOrigMB, sizeNewMB)
 		return nil
 	}
