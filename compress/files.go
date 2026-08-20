@@ -14,7 +14,7 @@ type compress interface {
 	compress(ctx context.Context, client *immich.ClientSimple, asset immich.AssetResponseDto) (*os.File, error)
 }
 
-func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich.AssetResponseDto, diffPercent int, videoSem chan struct{}, imageConfig ImageConfig, videoConfig VideoConfig) error {
+func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich.AssetResponseDto, diffPercent int, force bool, videoSem chan struct{}, imageConfig ImageConfig, videoConfig VideoConfig) error {
 	skipped := true
 	if asset.ExifInfo == nil || asset.ExifInfo.FileSizeInByte == nil {
 		return fmt.Errorf("asset %s is missing file size info", asset.Id)
@@ -57,7 +57,7 @@ func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich
 	}
 
 	var uuidNew *types.UUID
-	if sizeOrig-sizeNew > int64(float64(sizeOrig)*(float64(diffPercent)/100)) {
+	if force || sizeOrig-sizeNew > int64(float64(sizeOrig)*(float64(diffPercent)/100)) {
 		ownerClient, err := client.ClientForOwner(asset.OwnerId)
 		if err != nil {
 			return err

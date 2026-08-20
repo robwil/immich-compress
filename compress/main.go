@@ -4,7 +4,9 @@ package compress
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -24,6 +26,8 @@ type Config struct {
 	APIKey         string
 	UserKeys       *immich.UserKeys
 	DryRun         bool
+	Force          bool
+	MatchExtension string
 	After          *time.Time
 	CreatedAfter   *time.Time
 	CreatedBefore  *time.Time
@@ -49,12 +53,15 @@ func Compressing(ctx context.Context, config Config) error {
 
 	videoSem := make(chan struct{}, config.VideoParallel)
 
-	compressedIDs, err := client.CompressedAssetIDsAllUsers()
-	if err != nil {
-		return fmt.Errorf("failed to fetch compressed assets: %w", err)
-	}
-	if len(compressedIDs) > 0 {
-		fmt.Printf("Skipping %d already-compressed assets\n", len(compressedIDs))
+	var compressedIDs map[string]bool
+	if !config.Force {
+		compressedIDs, err = client.CompressedAssetIDsAllUsers()
+		if err != nil {
+			return fmt.Errorf("failed to fetch compressed assets: %w", err)
+		}
+		if len(compressedIDs) > 0 {
+			fmt.Printf("Skipping %d already-compressed assets\n", len(compressedIDs))
+		}
 	}
 
 	var counter int32 = 0
@@ -107,7 +114,14 @@ func Compressing(ctx context.Context, config Config) error {
 				}
 			}
 
-			if compressedIDs[asset.Asset.Id] {
+			if config.MatchExtension != "" {
+				ext := strings.TrimPrefix(strings.ToLower(filepath.Ext(asset.Asset.OriginalFileName)), ".")
+				if ext != config.MatchExtension {
+					return nil
+				}
+			}
+
+			if !config.Force && compressedIDs[asset.Asset.Id] {
 				if config.After == nil || asset.Asset.FileModifiedAt.After(*config.After) {
 					return nil
 				}
@@ -122,7 +136,7 @@ func Compressing(ctx context.Context, config Config) error {
 
 			// Process the asset here
 			fmt.Printf("Processing file: %#v\n", asset.Asset.Id)
-			err := compressFile(gCtx, client, asset.Asset, config.DiffPercent, videoSem, ImageConfig{
+			err := compressFile(gCtx, client, asset.Asset, config.DiffPercent, config.Force, videoSem, ImageConfig{
 				Format:  config.ImageFormat,
 				Quality: config.ImageQuality,
 				Effort:  config.ImageEffort,

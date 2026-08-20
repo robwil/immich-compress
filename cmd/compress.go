@@ -38,6 +38,8 @@ var flagsCompress struct {
 	flagVideoContainer string
 	flagUserKeysFile   string
 	flagDryRun         bool
+	flagForce          bool
+	flagMatchExtension string
 	flagAfter          time.Time
 	flagCreatedAfter   string
 	flagCreatedBefore  string
@@ -113,6 +115,8 @@ since Immich restricts asset operations to the asset owner.`,
 			TakenAfter:     takenAfter,
 			TakenBefore:    takenBefore,
 			DryRun:         flagsCompress.flagDryRun,
+			Force:          flagsCompress.flagForce,
+			MatchExtension: strings.ToLower(strings.TrimSpace(flagsCompress.flagMatchExtension)),
 			DiffPercent:    flagsCompress.flagDiff,
 			ImageQuality:   flagsCompress.flagImageQuality,
 			ImageEffort:    flagsCompress.flagImageEffort,
@@ -154,6 +158,8 @@ func init() {
 	compressCmd.PersistentFlags().IntVarP(&flagsCompress.flagDiff, "diff-percents", "D", 8, "If size diff is lower than this percent files will not be replaced with new.")
 	compressCmd.PersistentFlags().StringVar(&flagsCompress.flagUserKeysFile, "user-keys", "", "Path to JSON file mapping user IDs to API keys for cross-user asset deletion")
 	compressCmd.PersistentFlags().BoolVarP(&flagsCompress.flagDryRun, "dry-run", "n", false, "Show matching assets without compressing")
+	compressCmd.PersistentFlags().BoolVar(&flagsCompress.flagForce, "force", false, "Reprocess all matching assets, ignoring the compressed skip list")
+	compressCmd.PersistentFlags().StringVar(&flagsCompress.flagMatchExtension, "match-ext", "", "Only process assets with this file extension (e.g. mkv, jpg)")
 	compressCmd.PersistentFlags().TimeVarP(&flagsCompress.flagAfter, "after", "t", time.Now(), []string{"2006-01-02 15:04:05"}, "Skip assets already compressed after this time (recompression threshold)")
 	compressCmd.PersistentFlags().StringVar(&flagsCompress.flagCreatedAfter, "created-after", "", "Only process assets uploaded after this date (YYYY-MM-DD)")
 	compressCmd.PersistentFlags().StringVar(&flagsCompress.flagCreatedBefore, "created-before", "", "Only process assets uploaded before this date (YYYY-MM-DD)")
