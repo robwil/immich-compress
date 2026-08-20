@@ -38,7 +38,7 @@ func (c *ClientSimple) AssetUploadCopy(asset AssetResponseDto, file *os.File) (*
 	params := &uploadAssetBody{
 		DeviceAssetID:    asset.DeviceAssetId,
 		DeviceID:         asset.DeviceId,
-		Duration:         asset.Duration,
+		Duration:         string(asset.Duration),
 		FileCreatedAt:    asset.FileCreatedAt,
 		FileModifiedAt:   time.Now(),
 		Filename:         origNameWithoutExt + filepath.Ext(file.Name()),

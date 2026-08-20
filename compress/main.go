@@ -23,10 +23,16 @@ type Config struct {
 	Server         string
 	APIKey         string
 	UserKeys       *immich.UserKeys
+	DryRun         bool
 	After          time.Time
+	CreatedAfter   *time.Time
+	CreatedBefore  *time.Time
+	TakenAfter     *time.Time
+	TakenBefore    *time.Time
 	DiffPercent    int
 	ImageFormat    ImageFormat
 	ImageQuality   int
+	ImageEffort    int
 	VideoContainer VideoContainer
 	VideoFormat    VideoFormat
 	VideoQuality   int
@@ -42,7 +48,12 @@ func Compressing(ctx context.Context, config Config) error {
 
 	var counter int32 = 0
 
-	searchOption := immich.SearchAssetsJSONRequestBody{}
+	searchOption := immich.SearchAssetsJSONRequestBody{
+		CreatedAfter:  config.CreatedAfter,
+		CreatedBefore: config.CreatedBefore,
+		TakenAfter:    config.TakenAfter,
+		TakenBefore:   config.TakenBefore,
+	}
 	if config.AssetType != "ALL" {
 		typeAsset := (immich.AssetTypeEnum)(config.AssetType)
 		searchOption.Type = &typeAsset
@@ -88,11 +99,20 @@ func Compressing(ctx context.Context, config Config) error {
 			if asset.Asset.CompressedAfter(config.After) {
 				return nil
 			}
+
+			atomic.AddInt32(&counter, 1)
+
+			if config.DryRun {
+				fmt.Printf("[dry-run] %s (%s, %s)\n", asset.Asset.OriginalFileName, asset.Asset.Id, asset.Asset.Type)
+				return nil
+			}
+
 			// Process the asset here
 			fmt.Printf("Processing file: %#v\n", asset.Asset.Id)
 			err := compressFile(gCtx, client, asset.Asset, config.DiffPercent, ImageConfig{
 				Format:  config.ImageFormat,
 				Quality: config.ImageQuality,
+				Effort:  config.ImageEffort,
 			}, VideoConfig{
 				Container: config.VideoContainer,
 				Format:    config.VideoFormat,
@@ -101,7 +121,6 @@ func Compressing(ctx context.Context, config Config) error {
 			if err != nil {
 				return err
 			}
-			atomic.AddInt32(&counter, 1)
 
 			return nil
 		})
@@ -115,7 +134,11 @@ func Compressing(ctx context.Context, config Config) error {
 		return err
 	}
 
-	fmt.Printf("Processed files: %d\n", counter)
+	if config.DryRun {
+		fmt.Printf("Found %d assets to compress\n", counter)
+	} else {
+		fmt.Printf("Processed files: %d\n", counter)
+	}
 
 	return nil
 }

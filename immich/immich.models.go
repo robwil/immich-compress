@@ -951,7 +951,7 @@ type AssetResponseDto struct {
 	DeviceAssetId string           `json:"deviceAssetId"`
 	DeviceId      string           `json:"deviceId"`
 	DuplicateId   *string          `json:"duplicateId"`
-	Duration      string           `json:"duration"`
+	Duration      FlexString       `json:"duration"`
 	ExifInfo      *ExifResponseDto `json:"exifInfo,omitempty"`
 
 	// FileCreatedAt The actual UTC timestamp when the file was created/captured, preserving timezone information. This is the authoritative timestamp for chronological sorting within timeline groups. Combined with timezone data, this can be used to determine the exact moment the photo was taken.

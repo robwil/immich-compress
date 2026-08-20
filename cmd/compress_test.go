@@ -396,21 +396,20 @@ func TestCompressCommandIntegration(t *testing.T) {
 	})
 }
 
-// TestCompressCommandParallelAndAfterFlags tests integration with root command flags
+// TestCompressCommandParallelAndAfterFlags tests that parallel and after flags are on the compress command
 func TestCompressCommandParallelAndAfterFlags(t *testing.T) {
-	if rootCmd == nil {
-		t.Fatal("rootCmd should not be nil")
+	if compressCmd == nil {
+		t.Fatal("compressCmd should not be nil")
 	}
 
-	// Test that parallel and after flags from root are accessible
-	parallelFlag := rootCmd.PersistentFlags().Lookup("parallel")
+	parallelFlag := compressCmd.PersistentFlags().Lookup("parallel")
 	if parallelFlag == nil {
-		t.Error("parallel flag should be defined on root command")
+		t.Error("parallel flag should be defined on compress command")
 	}
 
-	afterFlag := rootCmd.PersistentFlags().Lookup("after")
+	afterFlag := compressCmd.PersistentFlags().Lookup("after")
 	if afterFlag == nil {
-		t.Error("after flag should be defined on root command")
+		t.Error("after flag should be defined on compress command")
 	}
 
 	// Test that these flags work with the compress command
@@ -424,8 +423,8 @@ func TestCompressCommandParallelAndAfterFlags(t *testing.T) {
 		}
 
 		// Add root command flags
-		cmd.PersistentFlags().IntVarP(&flagsRoot.flagParallel, "parallel", "p", 4, "parallel")
-		cmd.PersistentFlags().TimeVarP(&flagsRoot.flagAfter, "after", "t", time.Now(), []string{"2006-01-02 15:04:05"}, "after")
+		cmd.PersistentFlags().IntVarP(&flagsCompress.flagParallel, "parallel", "p", 4, "parallel")
+		cmd.PersistentFlags().TimeVarP(&flagsCompress.flagAfter, "after", "t", time.Now(), []string{"2006-01-02 15:04:05"}, "after")
 
 		// Add compress-specific flags
 		cmd.PersistentFlags().StringVarP(&flagsCompress.flagServer, "server", "s", "", "The immich server address")

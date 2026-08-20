@@ -16,6 +16,7 @@ import (
 type ImageConfig struct {
 	Format  ImageFormat
 	Quality int
+	Effort  int
 }
 
 type ImageFormat string
@@ -70,21 +71,21 @@ func (c *ImageConfig) compress(ctx context.Context, client *immich.ClientSimple,
 		options := vips.DefaultJxlsaveBufferOptions()
 		options.Q = c.Quality
 		options.Keep = vips.KeepAll
-		options.Effort = 9
+		options.Effort = c.Effort
 		imageBytes, exportErr = image.JxlsaveBuffer(options)
 
 	case WEBP:
 		options := vips.DefaultWebpsaveBufferOptions()
 		options.Q = c.Quality
 		options.Keep = vips.KeepAll
-		options.Effort = 9
+		options.Effort = c.Effort
 		imageBytes, exportErr = image.WebpsaveBuffer(options)
 
 	case HEIF:
 		options := vips.DefaultHeifsaveBufferOptions()
 		options.Q = c.Quality
 		options.Keep = vips.KeepAll
-		options.Effort = 9
+		options.Effort = c.Effort
 		imageBytes, exportErr = image.HeifsaveBuffer(options)
 
 	default:
