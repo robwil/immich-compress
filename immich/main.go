@@ -16,6 +16,8 @@ type ClientSimple struct {
 	clientRaw ClientInterface
 	ctx       context.Context
 	parallel  int
+	baseURL   string
+	userKeys  *UserKeys
 	tags      struct {
 		compressedID types.UUID
 	}
@@ -29,21 +31,23 @@ func normalizeBaseURL(baseURL string) string {
 	return baseURL
 }
 
-func NewClientSimple(ctx context.Context, parralel int, baseURL string, apiKey string) (*ClientSimple, error) {
-	baseURL = normalizeBaseURL(baseURL)
-
-	// Create a new client.
-	// You must provide an http.Client that adds the API key to every request.
-	client, err := NewClientWithResponses(baseURL, WithRequestEditorFn(
+func newClientForAPIKey(baseURL string, apiKey string) (*ClientWithResponses, error) {
+	return NewClientWithResponses(baseURL, WithRequestEditorFn(
 		func(ctx context.Context, req *http.Request) error {
 			req.Header.Set("x-api-key", apiKey)
 			return nil
 		}))
+}
+
+func NewClientSimple(ctx context.Context, parralel int, baseURL string, apiKey string, userKeys *UserKeys) (*ClientSimple, error) {
+	baseURL = normalizeBaseURL(baseURL)
+
+	client, err := newClientForAPIKey(baseURL, apiKey)
 	if err != nil {
 		return nil, fmt.Errorf("error creating client: %w", err)
 	}
 
-	clientSimple := &ClientSimple{client: client, clientRaw: client.ClientInterface, ctx: ctx, parallel: parralel}
+	clientSimple := &ClientSimple{client: client, clientRaw: client.ClientInterface, ctx: ctx, parallel: parralel, baseURL: baseURL, userKeys: userKeys}
 
 	tagCompressedAtID, err := clientSimple.tagCompressedAt()
 	if err != nil {

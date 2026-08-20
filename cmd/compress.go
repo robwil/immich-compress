@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"immich-compress/compress"
+	"immich-compress/immich"
 
 	"github.com/spf13/cobra"
 )
@@ -29,6 +30,7 @@ var flagsCompress struct {
 	flagVideoQuality   int
 	flagVideoFormat    string
 	flagVideoContainer string
+	flagUserKeysFile   string
 }
 
 // Config holds configuration for compression command
@@ -50,6 +52,15 @@ var compressCmd = &cobra.Command{
 	Long:  `A longer description TODO`,
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		var userKeys *immich.UserKeys
+		if flagsCompress.flagUserKeysFile != "" {
+			var err error
+			userKeys, err = immich.LoadUserKeys(flagsCompress.flagUserKeysFile)
+			if err != nil {
+				return fmt.Errorf("failed to load user keys: %w", err)
+			}
+		}
+
 		config := compress.Config{
 			Parallel:       flagsRoot.flagParallel,
 			Limit:          flagsRoot.flagLimit,
@@ -57,6 +68,7 @@ var compressCmd = &cobra.Command{
 			AssetUUIDs:     flagsCompress.flagAssetUUIDs,
 			Server:         flagsCompress.flagServer,
 			APIKey:         flagsCompress.flagAPIKey,
+			UserKeys:       userKeys,
 			After:          flagsRoot.flagAfter,
 			DiffPercent:    flagsCompress.flagDiff,
 			ImageQuality:   flagsCompress.flagImageQuality,
@@ -91,6 +103,7 @@ func init() {
 	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagVideoFormat, "video-format", "F", string(compress.AV1), fmt.Sprintf("Video format for compression (%v)", strings.Join(formatSlice(compress.VideoFormatsAvailable), ", ")))
 	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagVideoContainer, "video-container", "C", string(compress.MKV), fmt.Sprintf("Video container format (%v)", strings.Join(formatSlice(compress.VideoContainersAvailable), ", ")))
 	compressCmd.PersistentFlags().IntVarP(&flagsCompress.flagDiff, "diff-percents", "D", 8, "If size diff is lower than this percent files will not be replaced with new.")
+	compressCmd.PersistentFlags().StringVar(&flagsCompress.flagUserKeysFile, "user-keys", "", "Path to JSON file mapping user IDs to API keys for cross-user asset deletion")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:

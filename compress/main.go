@@ -22,6 +22,7 @@ type Config struct {
 	AssetUUIDs     []string
 	Server         string
 	APIKey         string
+	UserKeys       *immich.UserKeys
 	After          time.Time
 	DiffPercent    int
 	ImageFormat    ImageFormat
@@ -34,7 +35,7 @@ type Config struct {
 func Compressing(ctx context.Context, config Config) error {
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(config.Parallel)
-	client, err := immich.NewClientSimple(gCtx, config.Parallel, config.Server, config.APIKey)
+	client, err := immich.NewClientSimple(gCtx, config.Parallel, config.Server, config.APIKey, config.UserKeys)
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ func Compressing(ctx context.Context, config Config) error {
 			}
 			// Process the asset here
 			fmt.Printf("Processing file: %#v\n", asset.Asset.Id)
-			err = compressFile(gCtx, client, asset.Asset, config.DiffPercent, ImageConfig{
+			err := compressFile(gCtx, client, asset.Asset, config.DiffPercent, ImageConfig{
 				Format:  config.ImageFormat,
 				Quality: config.ImageQuality,
 			}, VideoConfig{
