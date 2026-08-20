@@ -77,7 +77,7 @@ func (c *ClientSimple) ClientForOwner(ownerID string) (*ClientSimple, error) {
 		parallel:  c.parallel,
 		baseURL:   c.baseURL,
 		userKeys:  c.userKeys,
-		tags:      c.tags,
+		// tags left empty — EnsureCompressedTag will lazily create per-user
 	}, nil
 }
 

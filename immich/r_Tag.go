@@ -12,9 +12,14 @@ const (
 )
 
 func (c *ClientSimple) TagCompressedAdd(assetID types.UUID) error {
+	tagID, err := c.EnsureCompressedTag()
+	if err != nil {
+		return fmt.Errorf("failed to ensure compressed tag: %w", err)
+	}
+
 	resp, err := c.client.BulkTagAssetsWithResponse(c.ctx, TagBulkAssetsDto{
 		AssetIds: []types.UUID{assetID},
-		TagIds:   []types.UUID{c.tags.compressedID},
+		TagIds:   []types.UUID{tagID},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to attach tags: %w", err)
@@ -24,6 +29,19 @@ func (c *ClientSimple) TagCompressedAdd(assetID types.UUID) error {
 	}
 
 	return nil
+}
+
+// EnsureCompressedTag creates the compressed tag for this client's user if needed.
+func (c *ClientSimple) EnsureCompressedTag() (types.UUID, error) {
+	if c.tags.compressedID != (types.UUID{}) {
+		return c.tags.compressedID, nil
+	}
+	tagID, err := c.tagCompressedAt()
+	if err != nil {
+		return tagID, err
+	}
+	c.tags.compressedID = tagID
+	return tagID, nil
 }
 
 func (c *ClientSimple) tagCompressedAt() (types.UUID, error) {

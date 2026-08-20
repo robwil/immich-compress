@@ -46,6 +46,14 @@ func Compressing(ctx context.Context, config Config) error {
 		return err
 	}
 
+	compressedIDs, err := client.CompressedAssetIDsAllUsers()
+	if err != nil {
+		return fmt.Errorf("failed to fetch compressed assets: %w", err)
+	}
+	if len(compressedIDs) > 0 {
+		fmt.Printf("Skipping %d already-compressed assets\n", len(compressedIDs))
+	}
+
 	var counter int32 = 0
 
 	searchOption := immich.SearchAssetsJSONRequestBody{
@@ -96,7 +104,7 @@ func Compressing(ctx context.Context, config Config) error {
 				}
 			}
 
-			if asset.Asset.CompressedAfter(config.After) {
+			if compressedIDs[asset.Asset.Id] {
 				return nil
 			}
 
