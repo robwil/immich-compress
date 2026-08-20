@@ -93,6 +93,11 @@ since Immich restricts asset operations to the asset owner.`,
 			return err
 		}
 
+		var after *time.Time
+		if cmd.Flags().Changed("after") {
+			after = &flagsCompress.flagAfter
+		}
+
 		config := compress.Config{
 			Parallel:       flagsCompress.flagParallel,
 			Limit:          flagsCompress.flagLimit,
@@ -101,7 +106,7 @@ since Immich restricts asset operations to the asset owner.`,
 			Server:         flagsCompress.flagServer,
 			APIKey:         flagsCompress.flagAPIKey,
 			UserKeys:       userKeys,
-			After:          flagsCompress.flagAfter,
+			After:          after,
 			CreatedAfter:   createdAfter,
 			CreatedBefore:  createdBefore,
 			TakenAfter:     takenAfter,

@@ -24,7 +24,7 @@ type Config struct {
 	APIKey         string
 	UserKeys       *immich.UserKeys
 	DryRun         bool
-	After          time.Time
+	After          *time.Time
 	CreatedAfter   *time.Time
 	CreatedBefore  *time.Time
 	TakenAfter     *time.Time
@@ -105,7 +105,9 @@ func Compressing(ctx context.Context, config Config) error {
 			}
 
 			if compressedIDs[asset.Asset.Id] {
-				return nil
+				if config.After == nil || asset.Asset.FileModifiedAt.After(*config.After) {
+					return nil
+				}
 			}
 
 			atomic.AddInt32(&counter, 1)
